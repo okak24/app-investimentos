@@ -2,15 +2,48 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 
-# 1. Configuração profissional da página (Otimizada para Mobile e Desktop)
-st.set_page_config(
-    page_title="Portefólio Premium",
-    page_icon="📈",
-    layout="wide",
-    initial_sidebar_state="collapsed" # Começa fechado no telemóvel para dar espaço ao dashboard
-)
+st.set_page_config(page_title="Portefólio Premium", page_icon="📈", layout="wide", initial_sidebar_state="collapsed")
 
-# Estilização visual personalizada para um acabamento "Premium App"
+# 1. SISTEMA DE AUTENTICAÇÃO (Múltiplos Utilizadores)
+# Podes alterar as senhas aqui. A estrutura é "nome_de_utilizador": "senha"
+USERS = {
+    "admin": "admin123",
+    "lucia": "lucia2026",
+    "leonor": "leonor2026"
+}
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.username = ""
+
+if not st.session_state.logged_in:
+    st.title("🔒 Acesso ao Portefólio")
+    st.write("Por favor, insira os seus dados para entrar na sua conta.")
+    
+    with st.form("login_form"):
+        user_input = st.text_input("Utilizador").lower()
+        pwd_input = st.text_input("Senha", type="password")
+        submit_button = st.form_submit_button("Entrar")
+        
+        if submit_button:
+            if user_input in USERS and USERS[user_input] == pwd_input:
+                st.session_state.logged_in = True
+                st.session_state.username = user_input
+                st.rerun()
+            else:
+                st.error("Utilizador ou senha incorretos.")
+    st.stop() # Bloqueia o resto do código até a pessoa fazer login
+
+# 2. BOTÃO DE SAÍDA E ESTILIZAÇÃO
+col_title, col_logout = st.columns([8, 1])
+with col_title:
+    st.title(f"💼 Portefólio Global - Olá, {st.session_state.username.capitalize()}!")
+with col_logout:
+    if st.button("Sair (Logout)"):
+        st.session_state.logged_in = False
+        st.session_state.username = ""
+        st.rerun()
+
 st.markdown("""
     <style>
     .main { background-color: #f8fafc; }
@@ -21,115 +54,144 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Título Principal do Dashboard
-st.title("💼 Gestão de Portefólio Global")
-st.caption("Controlo profissional de Ações, ETFs e Criptomoedas")
-
-# 2. Base de Dados de Ativos de Referência (Sugestões Solicitadas)
+# 3. BASE DE DADOS DE ATIVOS (Expandida)
 ativos_dict = {
-    "Ações Americanas (EUA)": [
-        "NVIDIA (NVDA)", 
-        "Apple (AAPL)", 
-        "Microsoft (MSFT)", 
-        "Tesla (TSLA)", 
-        "Amazon (AMZN)", 
-        "Alphabet / Google (GOOGL)", 
-        "Meta / Facebook (META)"
+    "Depósito / Levantamento": [
+        "Caixa / Saldo Disponível na Corretora"
     ],
-    "ETFs (Globais e Europeus)": [
-        "S&P 500 UCITS ETF (VUAA / VUSA)", 
-        "MSCI World Core UCITS ETF (IWDA)", 
-        "Nasdaq 100 UCITS ETF (SXRV)", 
-        "Euro Stoxx 50 (SX5E)", 
-        "FTSE All-World Vanguard (VWCE)"
+    "Ações Americanas (Top 15)": [
+        "Apple (AAPL)", "Microsoft (MSFT)", "NVIDIA (NVDA)", "Amazon (AMZN)", "Alphabet (GOOGL)", 
+        "Meta (META)", "Tesla (TSLA)", "Berkshire Hathaway (BRK.B)", "Eli Lilly (LLY)", "Broadcom (AVGO)", 
+        "JPMorgan Chase (JPM)", "UnitedHealth (UNH)", "Visa (V)", "ExxonMobil (XOM)", "Johnson & Johnson (JNJ)"
     ],
-    "Criptomoedas de Referência": [
-        "Bitcoin (BTC)", 
-        "Ethereum (ETH)", 
-        "Solana (SOL)", 
-        "Cardano (ADA)", 
-        "Ripple (XRP)"
+    "Ações Europeias (Principais)": [
+        "ASML Holding (ASML)", "Novo Nordisk (NOVO B)", "LVMH (MC)", "SAP (SAP)", "Roche (ROG)", 
+        "Shell (SHEL)", "L'Oréal (OR)", "AstraZeneca (AZN)", "Novartis (NVS)", "TotalEnergies (TTE)"
+    ],
+    "Ações Globais, IA e Semicondutores (Top 25)": [
+        "TSMC (TSM)", "AMD (AMD)", "Intel (INTC)", "Qualcomm (QCOM)", "Texas Instruments (TXN)", 
+        "Micron Technology (MU)", "ARM Holdings (ARM)", "Applied Materials (AMAT)", "Lam Research (LRCX)", 
+        "Palantir (PLTR)", "Salesforce (CRM)", "Adobe (ADBE)", "Netflix (NFLX)", "Tencent (TCEHY)", 
+        "Alibaba (BABA)", "Samsung (SMSN)", "Sony (SONY)", "ASML (ASML)", "NXP Semiconductors (NXPI)", 
+        "Infineon (IFX)", "STMicroelectronics (STM)", "CrowdStrike (CRWD)", "Palo Alto (PANW)", "Snowflake (SNOW)", "Datadog (DDOG)"
+    ],
+    "ETFs Americanos (Top 20)": [
+        "SPDR S&P 500 (SPY)", "iShares Core S&P 500 (IVV)", "Vanguard S&P 500 (VOO)", "Invesco QQQ (QQQ)", 
+        "Vanguard Total Stock Market (VTI)", "Vanguard Growth (VUG)", "iShares Russell 2000 (IWM)", 
+        "Vanguard Value (VTV)", "Vanguard FTSE Developed Markets (VEA)", "iShares Core MSCI EAFE (IEFA)", 
+        "Vanguard Total Bond Market (BND)", "iShares Core US Aggregate Bond (AGG)", "SPDR Gold Shares (GLD)", 
+        "Vanguard Dividend Appreciation (VIG)", "Vanguard Real Estate (VNQ)", "Vanguard High Dividend Yield (VYM)", 
+        "iShares Core S&P Total U.S. Stock Market (ITOT)", "Financial Select Sector SPDR (XLF)", 
+        "Health Care Select Sector SPDR (XLV)", "Technology Select Sector SPDR (XLK)"
+    ],
+    "ETFs Europeus / UCITS (Top 20)": [
+        "Vanguard FTSE All-World (VWCE)", "iShares Core MSCI World (IWDA)", "Vanguard S&P 500 (VUAA)", 
+        "iShares Core S&P 500 (SXR8)", "iShares NASDAQ 100 (SXRV)", "iShares S&P 500 Info Tech (QDVE)", 
+        "Vanguard FTSE North America (VNRT)", "iShares Core MSCI EM IMI (EIMI)", "iShares MSCI ACWI (IS3N)", 
+        "Amundi MSCI World (CW8)", "Xtrackers Euro Stoxx 50 (XD5E)", "iShares Core FTSE 100 (ISF)", 
+        "iShares Global Clean Energy (INRG)", "Vanguard FTSE Emerging Markets (VFEM)", "iShares Physical Gold (IGLN)", 
+        "Vanguard All-World High Dividend (VHYL)", "iShares STOXX Europe 600 (EXSA)", "SPDR S&P US Dividend Aristocrats (UDVD)", 
+        "Xtrackers MSCI World (XDWD)", "Amundi S&P 500 (PE500)"
+    ],
+    "Criptomoedas (Top 20)": [
+        "Bitcoin (BTC)", "Ethereum (ETH)", "Tether (USDT)", "BNB (BNB)", "Solana (SOL)", 
+        "USDC (USDC)", "XRP (XRP)", "Dogecoin (DOGE)", "Toncoin (TON)", "Cardano (ADA)", 
+        "Shiba Inu (SHIB)", "Avalanche (AVAX)", "Polkadot (DOT)", "Bitcoin Cash (BCH)", 
+        "Chainlink (LINK)", "Tron (TRX)", "Polygon (MATIC / POL)", "NEAR Protocol (NEAR)", 
+        "Litecoin (LTC)", "Uniswap (UNI)"
     ]
 }
 
-# 3. Inicialização do Histórico de Dados em Memória
+# 4. INICIALIZAÇÃO DO HISTÓRICO GERAL (Com coluna de Utilizador)
 if 'operacoes' not in st.session_state:
-    # Iniciamos com alguns registos reais simulados para o ecrã não aparecer vazio e sem graça
-    st.session_state.operacoes = pd.DataFrame([
-        {"Data": date(2026, 6, 11), "Categoria": "Criptomoedas de Referência", "Ativo": "Bitcoin (BTC)", "Tipo": "Compra", "Moeda": "USD ($)", "Preço": 63597.00, "Valor Movimentado": 500.00, "Quantidade": 0.007862},
-        {"Data": date(2026, 6, 15), "Categoria": "ETFs (Globais e Europeus)", "Ativo": "S&P 500 UCITS ETF (VUAA / VUSA)", "Tipo": "Compra", "Moeda": "EUR (€)", "Preço": 92.50, "Valor Movimentado": 200.00, "Quantidade": 2.162162},
-        {"Data": date(2026, 6, 20), "Categoria": "Ações Americanas (EUA)", "Ativo": "NVIDIA (NVDA)", "Tipo": "Compra", "Moeda": "USD ($)", "Preço": 127.40, "Valor Movimentado": 150.00, "Quantidade": 1.177394}
+    st.session_state.operacoes = pd.DataFrame(columns=[
+        "Utilizador", "Data", "Categoria", "Ativo", "Tipo", "Moeda", "Preço", "Comissões", "Valor Movimentado", "Quantidade"
     ])
 
-# 4. MENU LATERAL (Formulário de Entrada - No Telemóvel fica escondido num botão no topo esquerdo)
+# 5. MENU LATERAL (Formulário)
 with st.sidebar:
     st.header("➕ Nova Operação")
-    st.write("Insira os detalhes do investimento abaixo:")
     
     data_op = st.date_input("Data do Negócio", date.today())
-    categoria = st.selectbox("Categoria do Ativo", list(ativos_dict.keys()))
-    ativo = st.selectbox("Ativo Comercializado", ativos_dict[categoria])
+    categoria = st.selectbox("Categoria", list(ativos_dict.keys()))
+    ativo = st.selectbox("Ativo", ativos_dict[categoria])
     
-    tipo = st.radio("Natureza da Operação", ["Compra", "Venda"], horizontal=True)
-    moeda = st.radio("Moeda Utilizada", ["EUR (€)", "USD ($)"], horizontal=True)
+    if categoria == "Depósito / Levantamento":
+        tipo = st.radio("Natureza", ["Depósito", "Levantamento"], horizontal=True)
+        preco = 1.0  # Para depósitos o preço não importa
+        qtd = 0.0
+    else:
+        tipo = st.radio("Natureza", ["Compra", "Venda", "Dividendo"], horizontal=True)
+        preco = st.number_input("Preço Unitário", min_value=0.0, step=0.01, format="%.2f")
     
-    sinal_moeda = "€" if "EUR" in moeda else "$"
-    preco = st.number_input(f"Preço Unitário do Ativo ({sinal_moeda})", min_value=0.0, step=0.01, format="%.2f")
-    valor = st.number_input(f"Valor Total Investido ({sinal_moeda})", min_value=0.0, step=10.0, format="%.2f")
+    moeda = st.radio("Moeda", ["EUR (€)", "USD ($)"], horizontal=True)
+    valor = st.number_input("Valor Bruto (S/ Taxas)", min_value=0.0, step=10.0, format="%.2f")
+    comissao = st.number_input("Comissões / Taxas", min_value=0.0, step=0.5, format="%.2f")
     
-    # Execução do Botão de Registo
-    if st.button("🚀 Confirmar e Registar"):
-        if preco > 0 and valor > 0:
-            # Se for venda, a quantidade entra como negativa para abater no saldo total
-            qtd = (valor / preco) if tipo == "Compra" else -(valor / preco)
+    if st.button("🚀 Confirmar Movimento"):
+        if valor > 0 or tipo == "Dividendo":
+            # Calcular quantidade: Vendas e Levantamentos reduzem saldo
+            if tipo in ["Compra", "Venda"]:
+                qtd = (valor / preco) if tipo == "Compra" else -(valor / preco)
+            elif tipo == "Dividendo":
+                qtd = 0.0 # Dividendos não afetam a quantidade de ações, só dão dinheiro
             
             nova_linha = pd.DataFrame([{
-                "Data": data_op, "Categoria": categoria, "Ativo": ativo, "Tipo": tipo,
-                "Moeda": moeda, "Preço": preco, "Valor Movimentado": valor, "Quantidade": qtd
+                "Utilizador": st.session_state.username, "Data": data_op, "Categoria": categoria, 
+                "Ativo": ativo, "Tipo": tipo, "Moeda": moeda, "Preço": preco, 
+                "Comissões": comissao, "Valor Movimentado": valor, "Quantidade": qtd
             }])
             
             st.session_state.operacoes = pd.concat([st.session_state.operacoes, nova_linha], ignore_index=True)
-            st.success(f"{ativo} adicionado com sucesso!")
+            st.success("Movimento registado com sucesso!")
         else:
-            st.error("Por favor, preencha valores válidos maiores que zero.")
+            st.error("Insira um valor maior que zero.")
 
-# 5. PAINEL DE MÉTRICAS (Zebra-Striping de Moedas)
-df_atual = st.session_state.operacoes
+# 6. DADOS DO UTILIZADOR ATUAL
+df_total = st.session_state.operacoes
+df_user = df_total[df_total['Utilizador'] == st.session_state.username]
 
-st.subheader("📊 Resumo Atual do Portefólio")
+# 7. PAINEL DE MÉTRICAS (Filtrado por Utilizador)
+st.subheader(f"📊 Resumo Financeiro")
 col_eur, col_usd = st.columns(2)
 
 with col_eur:
-    st.markdown("<h4 style='color: #0284c7;'>🇪🇺 Total em Euros (€)</h4>", unsafe_allow_html=True)
-    compras_eur = df_atual[(df_atual['Moeda'] == "EUR (€)") & (df_atual['Tipo'] == "Compra")]['Valor Movimentado'].sum()
-    vendas_eur = df_atual[(df_atual['Moeda'] == "EUR (€)") & (df_atual['Tipo'] == "Venda")]['Valor Movimentado'].sum()
-    net_eur = compras_eur - vendas_eur
-    st.metric("Capital Alocado (€)", f"{net_eur:,.2f} €")
+    st.markdown("<h4 style='color: #0284c7;'>🇪🇺 Conta Euros (€)</h4>", unsafe_allow_html=True)
+    compras_eur = df_user[(df_user['Moeda'] == "EUR (€)") & (df_user['Tipo'] == "Compra")]['Valor Movimentado'].sum()
+    vendas_eur = df_user[(df_user['Moeda'] == "EUR (€)") & (df_user['Tipo'] == "Venda")]['Valor Movimentado'].sum()
+    dividendos_eur = df_user[(df_user['Moeda'] == "EUR (€)") & (df_user['Tipo'] == "Dividendo")]['Valor Movimentado'].sum()
+    comissoes_eur = df_user[df_user['Moeda'] == "EUR (€)"]['Comissões'].sum()
+    
+    net_eur = compras_eur - vendas_eur + comissoes_eur
+    st.metric("Total Alocado em Ativos (€)", f"{net_eur:,.2f} €")
+    st.caption(f"Dividendos Recebidos: {dividendos_eur:,.2f} € | Total Comissões: {comissoes_eur:,.2f} €")
 
 with col_usd:
-    st.markdown("<h4 style='color: #0284c7;'>🇺🇸 Total em Dólares ($)</h4>", unsafe_allow_html=True)
-    compras_usd = df_atual[(df_atual['Moeda'] == "USD ($)") & (df_atual['Tipo'] == "Compra")]['Valor Movimentado'].sum()
-    vendas_usd = df_atual[(df_atual['Moeda'] == "USD ($)") & (df_atual['Tipo'] == "Venda")]['Valor Movimentado'].sum()
-    net_usd = compras_usd - vendas_usd
-    st.metric("Capital Alocado ($)", f"$ {net_usd:,.2f}")
+    st.markdown("<h4 style='color: #0284c7;'>🇺🇸 Conta Dólares ($)</h4>", unsafe_allow_html=True)
+    compras_usd = df_user[(df_user['Moeda'] == "USD ($)") & (df_user['Tipo'] == "Compra")]['Valor Movimentado'].sum()
+    vendas_usd = df_user[(df_user['Moeda'] == "USD ($)") & (df_user['Tipo'] == "Venda")]['Valor Movimentado'].sum()
+    dividendos_usd = df_user[(df_user['Moeda'] == "USD ($)") & (df_user['Tipo'] == "Dividendo")]['Valor Movimentado'].sum()
+    comissoes_usd = df_user[df_user['Moeda'] == "USD ($)"]['Comissões'].sum()
+    
+    net_usd = compras_usd - vendas_usd + comissoes_usd
+    st.metric("Total Alocado em Ativos ($)", f"$ {net_usd:,.2f}")
+    st.caption(f"Dividendos Recebidos: $ {dividendos_usd:,.2f} | Total Comissões: $ {comissoes_usd:,.2f}")
 
 st.divider()
 
-# 6. TABELA DE HISTÓRICO COM FILTROS AVANÇADOS
-st.subheader("📜 Histórico Analítico de Operações")
+# 8. TABELA DE HISTÓRICO
+st.subheader("📜 Histórico de Movimentos")
 
-# Filtros rápidos para facilitar a pesquisa no ecrã do telemóvel
-filtro_moeda = st.multiselect("Filtrar por Moeda:", ["EUR (€)", "USD ($)"], default=["EUR (€)", "USD ($)"])
-df_filtrado = df_atual[df_atual['Moeda'].isin(filtro_moeda)].sort_values(by="Data", ascending=False)
+filtro_cat = st.multiselect("Filtrar por Categoria:", list(ativos_dict.keys()), default=list(ativos_dict.keys())[:3])
+df_filtrado = df_user[df_user['Categoria'].isin(filtro_cat)].sort_values(by="Data", ascending=False)
 
-# Renderização da Tabela Formatada Profissionalmente
+# Mostrar tabela sem a coluna "Utilizador" pois já sabemos de quem é
 st.dataframe(
-    df_filtrado.style.format({
+    df_filtrado.drop(columns=["Utilizador"]).style.format({
         "Preço": "{:,.2f}",
+        "Comissões": "{:,.2f}",
         "Valor Movimentado": "{:,.2f}",
         "Quantidade": "{:,.6f}"
     }),
     use_container_width=True
 )
-
-st.caption("💡 No telemóvel: Toque no ícone de três linhas no canto superior esquerdo para abrir o formulário e registar novos investimentos.")

@@ -1,17 +1,10 @@
-import streamlit as st
+#import streamlit as st
 import pandas as pd
 from datetime import date
 
 st.set_page_config(page_title="Portefólio Premium", page_icon="📈", layout="wide", initial_sidebar_state="collapsed")
 
-# 1. SISTEMA DE AUTENTICAÇÃO (Múltiplos Utilizadores)
-# Podes alterar as senhas aqui. A estrutura é "nome_de_utilizador": "senha"
-USERS = {
-    "admin": "admin123",
-    "lucia": "lucia2026",
-    "leonor": "leonor2026"
-}
-
+# 1. SISTEMA DE AUTENTICAÇÃO SEGURO (Lê do cofre do Streamlit)
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = ""
@@ -26,7 +19,10 @@ if not st.session_state.logged_in:
         submit_button = st.form_submit_button("Entrar")
         
         if submit_button:
-            if user_input in USERS and USERS[user_input] == pwd_input:
+            # Vai buscar as senhas ao cofre configurado no site do Streamlit
+            senhas_seguras = st.secrets["senhas"]
+            
+            if user_input in senhas_seguras and senhas_seguras[user_input] == pwd_input:
                 st.session_state.logged_in = True
                 st.session_state.username = user_input
                 st.rerun()

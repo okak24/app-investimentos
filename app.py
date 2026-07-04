@@ -75,7 +75,7 @@ ativos_dict = {
     "Criptomoedas (Top 20)": ["Bitcoin (BTC)", "Ethereum (ETH)", "Tether (USDT)", "BNB (BNB)", "Solana (SOL)", "XRP (XRP)", "Dogecoin (DOGE)", "Cardano (ADA)", "Bitcoin Cash (BCH)", "Chainlink (LINK)"]
 }
 
-# 3. LIGAÇÃO INTELIGENTE (GOOGLE SHEETS OU LOCAL)
+# 3. LIGAÇÃO INTELIGENTE (COM DETETIVE DE ERROS)
 gsheets_active = False
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
@@ -83,7 +83,8 @@ try:
     if 'operacoes' not in st.session_state:
         st.session_state.operacoes = df_sheet
     gsheets_active = True
-except Exception:
+except Exception as e:
+    st.error(f"Erro na ligação à Google: {e}") # Aqui vai aparecer o erro real a vermelho
     if 'operacoes' not in st.session_state:
         st.session_state.operacoes = pd.DataFrame(columns=colunas_base)
 
@@ -164,7 +165,7 @@ st.subheader("📊 Resumo Financeiro")
 col_eur, col_usd = st.columns(2)
 
 with col_eur:
-    st.markdown("<h4 style='color: #1e3a8a;'>🇪🇺 Euros (€)</h4>", unsafe_allow_html=True) # Azul Escuro
+    st.markdown("<h4 style='color: #1e3a8a;'>🇪🇺 Euros (€)</h4>", unsafe_allow_html=True)
     compras_eur = pd.to_numeric(df_user[(df_user['Moeda'] == "EUR (€)") & (df_user['Tipo'] == "Compra")]['Valor Movimentado']).sum()
     vendas_eur = pd.to_numeric(df_user[(df_user['Moeda'] == "EUR (€)") & (df_user['Tipo'] == "Venda")]['Valor Movimentado']).sum()
     comissoes_eur = pd.to_numeric(df_user[df_user['Moeda'] == "EUR (€)"]['Comissões']).sum()
@@ -172,7 +173,7 @@ with col_eur:
     st.metric("Total Alocado (€)", f"{net_eur:,.2f} €")
 
 with col_usd:
-    st.markdown("<h4 style='color: #1e3a8a;'>🇺🇸 Dólares ($)</h4>", unsafe_allow_html=True) # Azul Escuro
+    st.markdown("<h4 style='color: #1e3a8a;'>🇺🇸 Dólares ($)</h4>", unsafe_allow_html=True)
     compras_usd = pd.to_numeric(df_user[(df_user['Moeda'] == "USD ($)") & (df_user['Tipo'] == "Compra")]['Valor Movimentado']).sum()
     vendas_usd = pd.to_numeric(df_user[(df_user['Moeda'] == "USD ($)") & (df_user['Tipo'] == "Venda")]['Valor Movimentado']).sum()
     comissoes_usd = pd.to_numeric(df_user[df_user['Moeda'] == "USD ($)"]['Comissões']).sum()

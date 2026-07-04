@@ -1,14 +1,22 @@
 import streamlit as st
 import pandas as pd
 from datetime import date
+import time
 from streamlit_gsheets import GSheetsConnection
 
 st.set_page_config(page_title="Portefólio Premium", page_icon="📈", layout="wide", initial_sidebar_state="collapsed")
 
-# 1. SISTEMA DE AUTENTICAÇÃO SEGURO
+# 1. SISTEMA DE AUTENTICAÇÃO SEGURO COM TEMPO (1 HORA)
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = ""
+    st.session_state.login_time = 0
+
+if st.session_state.logged_in:
+    if time.time() - st.session_state.login_time > 3600:
+        st.session_state.logged_in = False
+        st.session_state.username = ""
+        st.warning("Sessão expirada por segurança (passou 1 hora). Faça login novamente.")
 
 if not st.session_state.logged_in:
     st.title("🔒 Acesso ao Portefólio")
@@ -25,6 +33,7 @@ if not st.session_state.logged_in:
                 if user_input in senhas_seguras and senhas_seguras[user_input] == pwd_input:
                     st.session_state.logged_in = True
                     st.session_state.username = user_input
+                    st.session_state.login_time = time.time()
                     st.rerun()
                 else:
                     st.error("Utilizador ou senha incorretos.")
@@ -41,11 +50,13 @@ with col_logout:
         st.session_state.username = ""
         st.rerun()
 
+# CSS COM CORES DE ALTO CONTRASTE
 st.markdown("""
     <style>
     .main { background-color: #f8fafc; }
-    div[data-testid="stMetricValue"] { font-size: 26px; font-weight: bold; color: #0f172a; }
-    div[data-testid="stMetricLabel"] { font-size: 13px; color: #64748b; font-weight: 500; }
+    /* Cores atualizadas para máximo contraste (Verde Escuro) */
+    div[data-testid="stMetricValue"] { font-size: 28px; font-weight: bold; color: #064e3b; } 
+    div[data-testid="stMetricLabel"] { font-size: 14px; color: #334155; font-weight: bold; }
     .stButton>button { width: 100%; border-radius: 8px; background-color: #0284c7; color: white; font-weight: bold; }
     .stButton>button:hover { background-color: #0369a1; color: white; }
     </style>
@@ -116,7 +127,7 @@ with st.sidebar:
                 conn.update(worksheet="Página1", data=st.session_state.operacoes)
                 
             st.success("Registado com sucesso!")
-            st.rerun() # Esta linha resolve o problema, forçando a app a mostrar o botão de backup imediatamente
+            st.rerun()
         else:
             st.error("Insira um valor válido.")
 
@@ -135,16 +146,15 @@ with st.sidebar:
         st.success("✅ Backup carregado!")
         st.rerun()
 
-    # O botão agora vai aparecer sempre que existirem registos
-    if not st.session_state.operacoes.empty:
-        csv = st.session_state.operacoes.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="💾 2. Descarregar Backup Atual", 
-            data=csv, 
-            file_name="backup_investimentos.csv", 
-            mime="text/csv", 
-            use_container_width=True
-        )
+    # Botão SEMPRE visível
+    csv = st.session_state.operacoes.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="💾 2. Descarregar Backup Atual", 
+        data=csv, 
+        file_name="backup_investimentos.csv", 
+        mime="text/csv", 
+        use_container_width=True
+    )
 
 # 6. PAINEL PRINCIPAL (DASHBOARD)
 df_total = st.session_state.operacoes
@@ -154,7 +164,7 @@ st.subheader("📊 Resumo Financeiro")
 col_eur, col_usd = st.columns(2)
 
 with col_eur:
-    st.markdown("<h4 style='color: #0284c7;'>🇪🇺 Euros (€)</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color: #1e3a8a;'>🇪🇺 Euros (€)</h4>", unsafe_allow_html=True) # Azul Escuro
     compras_eur = pd.to_numeric(df_user[(df_user['Moeda'] == "EUR (€)") & (df_user['Tipo'] == "Compra")]['Valor Movimentado']).sum()
     vendas_eur = pd.to_numeric(df_user[(df_user['Moeda'] == "EUR (€)") & (df_user['Tipo'] == "Venda")]['Valor Movimentado']).sum()
     comissoes_eur = pd.to_numeric(df_user[df_user['Moeda'] == "EUR (€)"]['Comissões']).sum()
@@ -162,7 +172,7 @@ with col_eur:
     st.metric("Total Alocado (€)", f"{net_eur:,.2f} €")
 
 with col_usd:
-    st.markdown("<h4 style='color: #0284c7;'>🇺🇸 Dólares ($)</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color: #1e3a8a;'>🇺🇸 Dólares ($)</h4>", unsafe_allow_html=True) # Azul Escuro
     compras_usd = pd.to_numeric(df_user[(df_user['Moeda'] == "USD ($)") & (df_user['Tipo'] == "Compra")]['Valor Movimentado']).sum()
     vendas_usd = pd.to_numeric(df_user[(df_user['Moeda'] == "USD ($)") & (df_user['Tipo'] == "Venda")]['Valor Movimentado']).sum()
     comissoes_usd = pd.to_numeric(df_user[df_user['Moeda'] == "USD ($)"]['Comissões']).sum()
@@ -170,5 +180,27 @@ with col_usd:
     st.metric("Total Alocado ($)", f"$ {net_usd:,.2f}")
 
 st.divider()
+
+# 7. ZONA DE EDIÇÃO DE DADOS
 st.subheader("📜 Histórico de Movimentos")
-st.dataframe(df_user.drop(columns=["Utilizador"]), use_container_width=True)
+st.write("Dica: Pode editar os valores diretamente na tabela abaixo, ou apagar linhas (selecionando a caixa à esquerda e carregando no ícone do caixote do lixo).")
+
+# Tabela Interativa
+df_editado = st.data_editor(
+    df_user.drop(columns=["Utilizador"]), 
+    num_rows="dynamic",
+    use_container_width=True,
+    key="editor_tabela"
+)
+
+# Botão de gravação da tabela
+if st.button("💾 Guardar Alterações da Tabela"):
+    df_editado["Utilizador"] = st.session_state.username
+    df_outros = df_total[df_total['Utilizador'] != st.session_state.username]
+    st.session_state.operacoes = pd.concat([df_outros, df_editado], ignore_index=True)
+    
+    if gsheets_active:
+        conn.update(worksheet="Página1", data=st.session_state.operacoes)
+        
+    st.success("Alterações guardadas com sucesso!")
+    st.rerun()

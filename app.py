@@ -64,7 +64,7 @@ ativos_dict = {
     "Criptomoedas (Top 20)": ["Bitcoin (BTC)", "Ethereum (ETH)", "Tether (USDT)", "BNB (BNB)", "Solana (SOL)", "XRP (XRP)", "Dogecoin (DOGE)", "Cardano (ADA)", "Bitcoin Cash (BCH)", "Chainlink (LINK)"]
 }
 
-# 3. LIGAÇÃO INTELIGENTE: TENTA O GOOGLE SHEETS, SE FALHAR USA MEMÓRIA LOCAL
+# 3. LIGAÇÃO INTELIGENTE (GOOGLE SHEETS OU LOCAL)
 gsheets_active = False
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
@@ -79,25 +79,8 @@ except Exception:
 if not gsheets_active:
     st.warning("⚠️ Ligação ao Google Sheets não detetada. A app está a usar o modo de Backup Local. Guarde o seu ficheiro CSV antes de sair!")
 
-# 4. MENU LATERAL: GESTÃO DE DADOS E NOVAS OPERAÇÕES
+# 4. MENU LATERAL
 with st.sidebar:
-    st.header("📁 Backups Locais")
-    
-    ficheiro_carregado = st.file_uploader("1. Carregar Backup (.csv)", type="csv")
-    if ficheiro_carregado is not None:
-        novo_df = pd.read_csv(ficheiro_carregado)
-        novo_df['Data'] = pd.to_datetime(novo_df['Data']).dt.date
-        st.session_state.operacoes = novo_df
-        if gsheets_active: # Se o GSheets estiver ativo, sincroniza o ficheiro que acabou de ser carregado para a nuvem
-            conn.update(worksheet="Página1", data=st.session_state.operacoes)
-        st.success("✅ Backup carregado!")
-
-    if not st.session_state.operacoes.empty:
-        csv = st.session_state.operacoes.to_csv(index=False).encode('utf-8')
-        st.download_button(label="💾 2. Descarregar Backup Atual", data=csv, file_name="backup_investimentos.csv", mime="text/csv", use_container_width=True)
-    
-    st.divider()
-    
     st.header("➕ Nova Operação")
     data_op = st.date_input("Data do Negócio", date.today())
     categoria = st.selectbox("Categoria", list(ativos_dict.keys()))
@@ -129,15 +112,41 @@ with st.sidebar:
             
             st.session_state.operacoes = pd.concat([st.session_state.operacoes, nova_linha], ignore_index=True)
             
-            # Se o Google Sheets estiver ativo e configurado, grava logo lá
             if gsheets_active:
                 conn.update(worksheet="Página1", data=st.session_state.operacoes)
                 
             st.success("Registado com sucesso!")
+            st.rerun() # Esta linha resolve o problema, forçando a app a mostrar o botão de backup imediatamente
         else:
             st.error("Insira um valor válido.")
 
-# 5. PAINEL PRINCIPAL (DASHBOARD)
+    st.divider()
+    
+    # 5. ZONA DE BACKUPS REPOSICIONADA
+    st.header("📁 Backups Locais")
+    
+    ficheiro_carregado = st.file_uploader("1. Carregar Backup (.csv)", type="csv")
+    if ficheiro_carregado is not None:
+        novo_df = pd.read_csv(ficheiro_carregado)
+        novo_df['Data'] = pd.to_datetime(novo_df['Data']).dt.date
+        st.session_state.operacoes = novo_df
+        if gsheets_active:
+            conn.update(worksheet="Página1", data=st.session_state.operacoes)
+        st.success("✅ Backup carregado!")
+        st.rerun()
+
+    # O botão agora vai aparecer sempre que existirem registos
+    if not st.session_state.operacoes.empty:
+        csv = st.session_state.operacoes.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="💾 2. Descarregar Backup Atual", 
+            data=csv, 
+            file_name="backup_investimentos.csv", 
+            mime="text/csv", 
+            use_container_width=True
+        )
+
+# 6. PAINEL PRINCIPAL (DASHBOARD)
 df_total = st.session_state.operacoes
 df_user = df_total[df_total['Utilizador'] == st.session_state.username]
 
